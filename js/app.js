@@ -85,6 +85,7 @@ const App = (function () {
     const s = Storage.settings();
     document.getElementById('conflict-highlight-toggle').checked = !!s.conflictHighlight;
     document.getElementById('auto-check-toggle').checked = !!s.autoCheck;
+    document.getElementById('sound-toggle').checked = !!s.sound;
 
     const games = Storage.games();
     const resumeable = Object.values(games)
@@ -194,6 +195,12 @@ const App = (function () {
     document.getElementById('auto-check-toggle').addEventListener('change', (e) => {
       const s = Storage.settings();
       s.autoCheck = e.target.checked;
+      Storage.saveSettings(s);
+    });
+
+    document.getElementById('sound-toggle').addEventListener('change', (e) => {
+      const s = Storage.settings();
+      s.sound = e.target.checked;
       Storage.saveSettings(s);
     });
 

@@ -37,7 +37,7 @@ const Storage = (function () {
   }
 
   function defaultSettings() {
-    return { theme: 'light', conflictHighlight: true, autoCheck: false, zoom: 1 };
+    return { theme: 'light', conflictHighlight: true, autoCheck: false, zoom: 1, sound: false };
   }
 
   const api = {
