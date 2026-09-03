@@ -1,3 +1,7 @@
+# Custom
+opencode.session.txt
+.DS_Store
+
 # Logs
 logs
 *.log
