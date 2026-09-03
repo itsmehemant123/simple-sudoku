@@ -43,6 +43,14 @@
           <span>Automatic error check</span>
           <input type="checkbox" id="auto-check-toggle">
         </label>
+        <div class="toggle-row">
+          <span>Text size</span>
+          <div class="zoom-control">
+            <button id="zoom-out" class="zoom-btn" title="Smaller">&#8722;</button>
+            <span id="zoom-label" class="zoom-label">100%</span>
+            <button id="zoom-in" class="zoom-btn" title="Larger">+</button>
+          </div>
+        </div>
         <p class="hint">When automatic error check is on, invalid entries are flagged red as you type. When off, use the <em>Check Board</em> button during a game.</p>
       </div>
 
@@ -79,6 +87,11 @@
         <span class="sub" id="game-key-short"></span>
       </div>
       <div class="header-controls">
+        <div class="zoom-control zoom-header">
+          <button id="zoom-out-game" class="zoom-btn" title="Smaller">&#8722;</button>
+          <span id="zoom-label-game" class="zoom-label">100%</span>
+          <button id="zoom-in-game" class="zoom-btn" title="Larger">+</button>
+        </div>
         <span id="timer" class="timer">00:00</span>
         <button id="pause-btn">Pause</button>
         <button id="theme-toggle-game" class="icon-btn" title="Toggle theme">&#9789;&#65039;</button>

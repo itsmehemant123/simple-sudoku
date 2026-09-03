@@ -2,10 +2,12 @@
 const App = (function () {
   const homeView = document.getElementById('home-view');
   const gameView = document.getElementById('game-view');
+  const ZOOM_STEPS = [1, 1.1, 1.2, 1.3, 1.4, 1.5];
 
   function init() {
     const s = Storage.settings();
     applyTheme(s.theme);
+    applyZoom(s.zoom);
     bindControls();
     renderHome();
     showView('home');
@@ -35,6 +37,46 @@ const App = (function () {
     s.theme = s.theme === 'light' ? 'dark' : 'light';
     Storage.saveSettings(s);
     applyTheme(s.theme);
+  }
+
+  /* ---------- zoom ---------- */
+
+  function zoomIndex(z) {
+    let best = 0;
+    let bestDist = Infinity;
+    ZOOM_STEPS.forEach((step, i) => {
+      const d = Math.abs(z - step);
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    });
+    return best;
+  }
+
+  function applyZoom(z) {
+    const i = zoomIndex(z);
+    const value = ZOOM_STEPS[i];
+    document.documentElement.style.setProperty('--zoom', String(value));
+    const label = Math.round(value * 100) + '%';
+    document.getElementById('zoom-label').textContent = label;
+    document.getElementById('zoom-label-game').textContent = label;
+    document.getElementById('zoom-out').disabled = i === 0;
+    document.getElementById('zoom-in').disabled = i === ZOOM_STEPS.length - 1;
+    document.getElementById('zoom-out-game').disabled = i === 0;
+    document.getElementById('zoom-in-game').disabled = i === ZOOM_STEPS.length - 1;
+  }
+
+  function setZoom(z) {
+    const s = Storage.settings();
+    s.zoom = z;
+    Storage.saveSettings(s);
+    applyZoom(z);
+  }
+
+  function shiftZoom(delta) {
+    const s = Storage.settings();
+    setZoom(ZOOM_STEPS[zoomIndex(s.zoom) + delta]);
   }
 
   /* ---------- home rendering ---------- */
@@ -133,6 +175,11 @@ const App = (function () {
   function bindControls() {
     document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
     document.getElementById('theme-toggle-game').addEventListener('click', toggleTheme);
+
+    document.getElementById('zoom-in').addEventListener('click', () => shiftZoom(1));
+    document.getElementById('zoom-out').addEventListener('click', () => shiftZoom(-1));
+    document.getElementById('zoom-in-game').addEventListener('click', () => shiftZoom(1));
+    document.getElementById('zoom-out-game').addEventListener('click', () => shiftZoom(-1));
 
     document.querySelectorAll('.diff-btn').forEach((b) => {
       b.addEventListener('click', () => Game.startNew(b.dataset.difficulty));

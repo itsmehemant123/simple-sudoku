@@ -122,6 +122,12 @@ body {
   padding: 16px;
 }
 
+/* Zoom level: scales in-flow content + modal boxes so the whole UI
+   grows together without affecting fixed-position backdrops. */
+html { --zoom: 1; }
+.view,
+.modal-box { zoom: var(--zoom); }
+
 .hidden { display: none !important; }
 
 h1, h2 { margin: 0 0 8px; }
@@ -348,7 +354,7 @@ button.primary:hover {
   border-bottom: 1px solid var(--glass-border);
 }
 
-.toggle-row:last-of-type { border-bottom: none; }
+.toggle-row:last-child { border-bottom: none; }
 
 .toggle-row input {
   width: 18px;
@@ -356,6 +362,36 @@ button.primary:hover {
   accent-color: var(--accent);
   cursor: pointer;
 }
+
+.zoom-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.zoom-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-label {
+  min-width: 52px;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.zoom-header .zoom-btn { width: 30px; height: 30px; font-size: 1rem; }
+.zoom-header .zoom-label { min-width: 44px; }
 
 /* ================= Lists ================= */
 .game-list { list-style: none; margin: 0; padding: 0; }
