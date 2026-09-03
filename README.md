@@ -13,14 +13,22 @@ A sleek, client-side Sudoku web app — no build step, no dependencies, works fu
 - **Timer + Pause/Resume**, plus **Give Up** (with confirm) that records an abandoned game
 - **Home screen** — difficulty picker, resumeable games, history (capped at 50, scrollable), and stats (games, wins, win rate, streak, play time, best time per difficulty)
 - **Persistence** — every game gets a random key and is saved to `localStorage`, so mid-way games can be resumed later
+- **Installable PWA** — web app manifest + service worker; install it to the home screen (iOS Safari: Share → *Add to Home Screen*) or taskbar/dock (Chrome/Edge: install icon in the address bar)
 - **Light & dark glass themes**
 
 ## Run
 
-No server required:
+No server required for the game itself:
 
 ```sh
 open index.html
+```
+
+For **installable PWA** features (service worker, add-to-home-screen), serve over http(s)/localhost — service workers don't run on `file://`. Either a static host (GitHub Pages, etc.) or locally:
+
+```sh
+python3 -m http.server 8080
+# then open http://localhost:8080
 ```
 
 ## Project structure
@@ -30,8 +38,12 @@ index.html        Home + Game views, number pad, modals
 css/style.css     Glass design system, light & dark themes via CSS variables
 js/sudoku.js      Solver + unique-solution puzzle generator
 js/storage.js     localStorage (games, stats, settings) + shared formatters
+js/sound.js       Web Audio click sounds (buttons + cells)
 js/game.js        Board rendering, input, highlights, checks, timer
-js/app.js         Home view, settings, theme, view routing
+js/app.js         Home view, settings, theme, zoom, view routing
+manifest.json     PWA manifest (name, icons, standalone display)
+sw.js             Service worker (cache-first offline app shell)
+icons/            PWA + apple-touch icons
 ```
 
 ## How the pieces fit

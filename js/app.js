@@ -11,6 +11,9 @@ const App = (function () {
     bindControls();
     renderHome();
     showView('home');
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+    }
   }
 
   /* ---------- views ---------- */
