@@ -84,9 +84,18 @@ const Game = (function () {
     difficultyLabel.textContent = Storage.cap(game.difficulty);
     keyShortEl.textContent = '#' + game.key.slice(0, 6).toUpperCase();
     setCheckButtonState();
+    applyTimerVisibility();
     render();
     startTimer();
     App.showView('game');
+  }
+
+  /* Hide the live clock (and the elapsed line in the pause overlay) when the
+     timer display is toggled off. Time is still tracked for saves and stats. */
+  function applyTimerVisibility() {
+    const show = Storage.settings().showTimer;
+    timerEl.classList.toggle('hidden', !show);
+    pauseTimeEl.classList.toggle('hidden', !show);
   }
 
   function currentDifficulty() {

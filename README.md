@@ -10,7 +10,7 @@ A sleek, client-side Sudoku web app — no build step, no dependencies, works fu
 - **Conflict highlighting** (toggleable) — selecting a number flags peer cells whose candidates clash; scans handle any number of candidates per cell
 - **Error checking** — off by default; when enabled, duplicates are flagged red on entry. A **Check Board** button (active only when auto-check is off) scans the whole grid
 - **Completed-digit lock** — once a digit has all 9 placements, its pad button is disabled
-- **Timer + Pause/Resume**, plus **Give Up** (with confirm) that records an abandoned game
+- **Timer + Pause/Resume** (timer display can be hidden from Settings), plus **Give Up** (with confirm) that records an abandoned game
 - **Home screen** — difficulty picker, resumeable games, history (capped at 50, scrollable), and stats (games, wins, win rate, streak, play time, best time per difficulty)
 - **Persistence** — every game gets a random key and is saved to `localStorage`, so mid-way games can be resumed later
 - **Installable PWA** — web app manifest + service worker; install it to the home screen (iOS Safari: Share → *Add to Home Screen*) or taskbar/dock (Chrome/Edge: install icon in the address bar)

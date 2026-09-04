@@ -13,6 +13,7 @@ const App = (function () {
     showView('home');
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
+      navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
     }
   }
 
@@ -89,6 +90,7 @@ const App = (function () {
     document.getElementById('conflict-highlight-toggle').checked = !!s.conflictHighlight;
     document.getElementById('auto-check-toggle').checked = !!s.autoCheck;
     document.getElementById('sound-toggle').checked = !!s.sound;
+    document.getElementById('timer-toggle').checked = !!s.showTimer;
 
     const games = Storage.games();
     const resumeable = Object.values(games)
@@ -204,6 +206,12 @@ const App = (function () {
     document.getElementById('sound-toggle').addEventListener('change', (e) => {
       const s = Storage.settings();
       s.sound = e.target.checked;
+      Storage.saveSettings(s);
+    });
+
+    document.getElementById('timer-toggle').addEventListener('change', (e) => {
+      const s = Storage.settings();
+      s.showTimer = e.target.checked;
       Storage.saveSettings(s);
     });
 

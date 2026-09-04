@@ -11,6 +11,7 @@ Files are plain scripts loaded in order at the end of `index.html`:
 ```html
 <script src="js/sudoku.js"></script>
 <script src="js/storage.js"></script>
+<script src="js/sound.js"></script>
 <script src="js/game.js"></script>
 <script src="js/app.js"></script>
 ```
@@ -30,10 +31,13 @@ Scripts expose IIFE namespaces on `window`: `Sudoku`, `Storage`, `Game`, `App`.
 |---|---|
 | `js/sudoku.js` | Solver + unique-solution puzzle generator (`Sudoku.generatePuzzle(difficulty)`, `Sudoku.solve`, `Sudoku.PEERS`). |
 | `js/storage.js` | `localStorage` persistence + shared formatters. |
+| `js/sound.js` | Web Audio click sounds for buttons and cells (disabled by default). |
 | `js/game.js` | Game controller: board render, input, highlights, checks, timer, win/pause/give-up. |
-| `js/app.js` | Home view rendering, settings toggles, theme, view routing. |
+| `js/app.js` | Home view rendering, settings toggles, theme, zoom, view routing. |
 | `css/style.css` | Glass design system. Themes are CSS variables under `html[data-theme="light"]` / `html[data-theme="dark"]`. |
 | `index.html` | Both views (home + game), number pad, modals. |
+| `sw.js` | Cache-first service worker. `CACHE` constant is the cache version. |
+| `manifest.json` / `icons/` | PWA manifest + install icons. |
 
 ## Critical invariants (do not break)
 
@@ -45,6 +49,7 @@ Scripts expose IIFE namespaces on `window`: `Sudoku`, `Storage`, `Game`, `App`.
 6. **Resume semantics.** Clicking Resume on the home screen auto-plays (overlay hidden, timer running). "Give Up" abandons the game (resets win streak) and requires the confirm modal.
 7. **Theme parity.** New styling must work in both themes. Use CSS variables, not hard-coded colors. `--candidate` should stay visually distinct from value colors (smaller, lighter weight, muted gray).
 8. **Persistence.** Every input path calls `saveNow()`; `beforeunload` also saves. Game state must survive reload for resume.
+9. **Service worker cache version.** Whenever you change any file listed in `ASSETS` in `sw.js` (`index.html`, `css/`, `js/`, `manifest.json`, `favicon.svg`, `icons/`), bump the `CACHE` constant (e.g. `sudoku-v2` → `sudoku-v3`). The SW is cache-first and otherwise keeps serving stale app files. `app.js` auto-reloads once on `controllerchange`, so a normal refresh picks up the new version.
 
 ## Difficulty tuning
 
@@ -55,7 +60,7 @@ Givens targets live in `DIFFICULTIES` in `js/sudoku.js`: easy 36, medium 30, har
 No test framework in the repo. Do these before finishing work:
 
 ```sh
-node --check js/sudoku.js js/storage.js js/game.js js/app.js
+node --check js/sudoku.js js/storage.js js/sound.js js/game.js js/app.js sw.js
 ```
 
 For behavioral checks, manual testing in a browser (see README "Verification" for the flow). If writing automated checks, use the existing pattern: a temp copy of `index.html` with script/CSS `src` rewritten to absolute `file://` paths plus an injected test `<script>` that writes results into a `<pre id="results">`, then drive it with headless Chrome (`--headless=new --virtual-time-budget=8000 --dump-dom`) and read the `pre`. Note `virtual-time-budget` does not settle CSS transitions — disable `body` transition in the harness if reading computed styles.
