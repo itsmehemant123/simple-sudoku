@@ -34,6 +34,11 @@ const App = (function () {
 
   function applyTheme(theme) {
     document.documentElement.dataset.theme = theme;
+    const isDark = theme === 'dark';
+    const colorMeta = document.getElementById('theme-color-meta');
+    if (colorMeta) colorMeta.content = isDark ? '#0a0f1e' : '#eef1f8';
+    const barMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (barMeta) barMeta.content = isDark ? 'black-translucent' : 'default';
   }
 
   function toggleTheme() {
