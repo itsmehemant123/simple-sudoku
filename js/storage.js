@@ -30,8 +30,8 @@ const Storage = (function () {
       totalPlayMs: 0,
       winStreak: 0,
       bestWinStreak: 0,
-      bestTimes: { easy: null, medium: null, hard: null },
-      winsByDifficulty: { easy: 0, medium: 0, hard: 0 },
+      bestTimes: { easy: null, medium: null, hard: null, custom: null },
+      winsByDifficulty: { easy: 0, medium: 0, hard: 0, custom: 0 },
       completedGames: [], // { key, difficulty, playMs, completedAt, won }
     };
   }
@@ -123,6 +123,11 @@ const Storage = (function () {
 
     cap(s) {
       return s ? s[0].toUpperCase() + s.slice(1) : '';
+    },
+
+    /* Human-readable game status: "in_progress" -> "In progress". */
+    formatStatus(s) {
+      return s === 'in_progress' ? 'In progress' : api.cap(s);
     },
   };
 

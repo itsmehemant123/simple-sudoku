@@ -352,6 +352,30 @@ button.primary:hover {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 8px 22px var(--accent-glow);
 }
 
+.import-btn { display: block; width: 100%; margin-top: 10px; }
+
+/* Import board modal */
+#import-input {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+}
+
+#import-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+#import-error { margin-top: 8px; color: var(--error); min-height: 18px; }
+
 .toggle-row {
   display: flex;
   justify-content: space-between;

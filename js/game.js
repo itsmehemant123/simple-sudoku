@@ -37,16 +37,17 @@ const Game = (function () {
     return 'g-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
   }
 
+  const CUSTOM_DIFFICULTIES = ['easy', 'medium', 'hard', 'custom'];
+
   /* ---------- lifecycle ---------- */
 
-  function startNew(difficulty) {
-    const gen = Sudoku.generatePuzzle(difficulty);
+  function buildGame({ difficulty, puzzle, solution, givens }) {
     game = {
       key: makeKey(),
       difficulty,
-      puzzle: gen.puzzle,
-      solution: gen.solution,
-      givens: gen.givens,
+      puzzle,
+      solution,
+      givens,
       entries: new Array(81).fill(0),
       candidates: Array.from({ length: 81 }, () => []),
       startTime: Date.now(),
@@ -58,6 +59,38 @@ const Game = (function () {
     Storage.setLastGameKey(game.key);
     Storage.recordNewGame(game);
     enterGame();
+  }
+
+  function startNew(difficulty) {
+    const gen = Sudoku.generatePuzzle(difficulty);
+    buildGame({
+      difficulty,
+      puzzle: gen.puzzle,
+      solution: gen.solution,
+      givens: gen.givens,
+    });
+  }
+
+  /* Start a game from a user-provided board. Returns an error string, or null
+     on success (the game view opens automatically). */
+  function importPuzzle(text, difficulty) {
+    const parsed = Sudoku.parseAndValidate(text);
+    if (!parsed.ok) return parsed.error;
+    buildGame({
+      difficulty: CUSTOM_DIFFICULTIES.includes(difficulty) ? difficulty : 'custom',
+      puzzle: parsed.puzzle,
+      solution: Sudoku.solve(parsed.puzzle, 1)[0],
+      givens: parsed.givens,
+    });
+    return null;
+  }
+
+  /* Build a shareable #p=...&d=... link for the current game (givens only). */
+  function shareLink() {
+    if (!game) return null;
+    let url = location.href.split('#')[0] + '#p=' + Sudoku.encodePuzzle(game.puzzle);
+    if (game.difficulty !== 'custom') url += '&d=' + game.difficulty;
+    return url;
   }
 
   function resume(key) {
@@ -471,6 +504,8 @@ const Game = (function () {
 
   return {
     startNew,
+    importPuzzle,
+    shareLink,
     resume,
     saveNow,
     currentDifficulty,

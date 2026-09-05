@@ -1,5 +1,5 @@
 /* Cache-first service worker: app shell + assets so the game works offline once installed. */
-const CACHE = 'sudoku-v3';
+const CACHE = 'sudoku-v6';
 const ASSETS = [
   './',
   './index.html',

@@ -37,6 +37,7 @@
           <button class="diff-btn" data-difficulty="medium">Medium</button>
           <button class="diff-btn" data-difficulty="hard">Hard</button>
         </div>
+        <button id="import-btn" class="diff-btn import-btn">Import Board</button>
       </div>
 
       <div class="card">
@@ -107,6 +108,7 @@
           <button id="zoom-in-game" class="zoom-btn" title="Larger">+</button>
         </div>
         <span id="timer" class="timer">00:00</span>
+        <button id="share-btn" class="icon-btn" title="Copy share link">&#128279;</button>
         <button id="pause-btn">Pause</button>
         <button id="theme-toggle-game" class="icon-btn" title="Toggle theme">&#9789;&#65039;</button>
       </div>
@@ -145,6 +147,20 @@
   </section>
 
   <!-- ============ MODALS ============ -->
+  <div id="import-modal" class="modal hidden">
+    <div class="modal-box">
+      <h2>Import a Board</h2>
+      <p class="hint" style="margin-top:0">Paste an 81-cell Sudoku string, row by row. Use digits 1-9 for givens and 0 or . for empty cells.</p>
+      <textarea id="import-input" rows="4" spellcheck="false" placeholder="e.g. 53..7....6..195...98....6.8...6...34..8.3..17...2...6.6....28....419..5....8..79"></textarea>
+      <p id="import-error" class="hint"></p>
+      <div class="stack">
+        <button id="import-start" class="primary">Start Game</button>
+        <button id="import-copy">Copy Link</button>
+        <button id="import-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div id="win-modal" class="modal hidden">
     <div class="modal-box">
       <h2>Puzzle Solved!</h2>

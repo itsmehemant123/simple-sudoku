@@ -11,6 +11,8 @@ const App = (function () {
     bindControls();
     renderHome();
     showView('home');
+    /* Defer so Game can call App.showView after App is fully initialized. */
+    setTimeout(handleShareHash, 0);
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
       navigator.serviceWorker.addEventListener('controllerchange', () => window.location.reload());
@@ -88,6 +90,54 @@ const App = (function () {
     setZoom(ZOOM_STEPS[zoomIndex(s.zoom) + delta]);
   }
 
+  /* ---------- import / share ---------- */
+
+  function copyText(text, btn) {
+    const done = () => {
+      const old = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = old; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+    } else {
+      fallbackCopy(text, done);
+    }
+  }
+
+  /* navigator.clipboard needs a secure context; fall back for file:// usage. */
+  function fallbackCopy(text, done) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+    done();
+  }
+
+  function shareUrl(puzzleText) {
+    return location.href.split('#')[0] + '#p=' + String(puzzleText || '').replace(/\s+/g, '');
+  }
+
+  function handleShareHash() {
+    const hash = location.hash;
+    if (hash.indexOf('#p=') !== 0) return;
+    const params = new URLSearchParams(hash.slice(1));
+    const p = params.get('p');
+    if (p) {
+      const err = Game.importPuzzle(p, params.get('d') || undefined);
+      if (err) {
+        document.getElementById('import-input').value = p;
+        document.getElementById('import-error').textContent = err;
+        document.getElementById('import-modal').classList.remove('hidden');
+      }
+    }
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+
   /* ---------- home rendering ---------- */
 
   function renderHome() {
@@ -115,7 +165,7 @@ const App = (function () {
       const li = document.createElement('li');
       const info = document.createElement('div');
       const title = document.createElement('div');
-      title.textContent = `${Storage.cap(g.difficulty)} \u00b7 ${Storage.cap(g.status)}`;
+      title.textContent = `${Storage.cap(g.difficulty)} \u00b7 ${Storage.formatStatus(g.status)}`;
       const sub = document.createElement('div');
       sub.className = 'sub';
       sub.textContent =
@@ -192,7 +242,7 @@ const App = (function () {
     document.getElementById('zoom-in-game').addEventListener('click', () => shiftZoom(1));
     document.getElementById('zoom-out-game').addEventListener('click', () => shiftZoom(-1));
 
-    document.querySelectorAll('.diff-btn').forEach((b) => {
+    document.querySelectorAll('.diff-btn[data-difficulty]').forEach((b) => {
       b.addEventListener('click', () => Game.startNew(b.dataset.difficulty));
     });
 
@@ -218,6 +268,31 @@ const App = (function () {
       const s = Storage.settings();
       s.showTimer = e.target.checked;
       Storage.saveSettings(s);
+    });
+
+    document.getElementById('import-btn').addEventListener('click', () => {
+      document.getElementById('import-input').value = '';
+      document.getElementById('import-error').textContent = '';
+      document.getElementById('import-modal').classList.remove('hidden');
+    });
+
+    document.getElementById('import-cancel').addEventListener('click', () => {
+      document.getElementById('import-modal').classList.add('hidden');
+    });
+
+    document.getElementById('import-start').addEventListener('click', () => {
+      const err = Game.importPuzzle(document.getElementById('import-input').value);
+      if (err) document.getElementById('import-error').textContent = err;
+      else document.getElementById('import-modal').classList.add('hidden');
+    });
+
+    document.getElementById('import-copy').addEventListener('click', () => {
+      copyText(shareUrl(document.getElementById('import-input').value), document.getElementById('import-copy'));
+    });
+
+    document.getElementById('share-btn').addEventListener('click', () => {
+      const url = Game.shareLink();
+      if (url) copyText(url, document.getElementById('share-btn'));
     });
 
     document.getElementById('check-close').addEventListener('click', () => {

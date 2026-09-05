@@ -56,11 +56,17 @@ const Sudoku = (function () {
     return best;
   }
 
-  /* Solve the grid. Returns up to `limit` solutions as copies of the grid. */
-  function solve(grid, limit = 1) {
+  /* Solve the grid. Returns up to `limit` solutions as copies of the grid.
+     When `maxNodes` > 0, the search stops after that many visited cells and
+     `out.exhausted` signals the budget was hit (prevents hangs on bad input). */
+  function solve(grid, limit = 1, maxNodes = 0) {
     const out = [];
+    out.exhausted = false;
     const g = grid.slice();
+    const budgeted = maxNodes > 0;
+    let nodes = 0;
     (function rec() {
+      if (budgeted && ++nodes > maxNodes) { out.exhausted = true; return; }
       if (out.length >= limit) return;
       const i = bestEmpty(g);
       if (i === -1) { out.push(g.slice()); return; }
@@ -121,11 +127,59 @@ const Sudoku = (function () {
     return best;
   }
 
+  /*
+   * Parse an 81-cell row-major string into a puzzle. Digits 1-9 are givens,
+   * 0 and . are empty cells; whitespace is ignored. Requires exactly one
+   * solution so the board is a valid puzzle.
+   */
+  function parseAndValidate(text) {
+    const cleaned = String(text || '').replace(/\s+/g, '');
+    if (cleaned.length !== 81) {
+      return { ok: false, error: `Board must be exactly 81 cells (found ${cleaned.length}).` };
+    }
+    const puzzle = [];
+    for (let i = 0; i < 81; i++) {
+      const ch = cleaned[i];
+      if (ch === '0' || ch === '.') puzzle.push(0);
+      else if (ch >= '1' && ch <= '9') puzzle.push(+ch);
+      else {
+        return {
+          ok: false,
+          error: `Invalid character "${ch}" at position ${i + 1}. Use digits 1-9 and 0 or . for empty cells.`,
+        };
+      }
+    }
+    for (let i = 0; i < 81; i++) {
+      const v = puzzle[i];
+      if (!v) continue;
+      for (const p of PEERS[i]) {
+        if (puzzle[p] === v) {
+          return { ok: false, error: `Duplicate ${v} in the same row, column, or box.` };
+        }
+      }
+    }
+    const solved = solve(puzzle, 2, 100000);
+    if (solved.exhausted) {
+      return { ok: false, error: 'This board is too sparse to validate; add more givens or remove conflicts.' };
+    }
+    if (solved.length === 0) return { ok: false, error: 'This board has no solution.' };
+    if (solved.length > 1) return { ok: false, error: 'This board has multiple solutions; a valid puzzle must have exactly one.' };
+    const givens = puzzle.reduce((n, v) => n + (v ? 1 : 0), 0);
+    return { ok: true, puzzle, givens };
+  }
+
+  /* Inverse of parseAndValidate: number[81] -> 81-char string (0 -> .). */
+  function encodePuzzle(puzzle) {
+    return puzzle.map((v) => (v ? String(v) : '.')).join('');
+  }
+
   return {
     PEERS,
     solve,
     generateSolution,
     generatePuzzle,
+    parseAndValidate,
+    encodePuzzle,
     DIFFICULTIES,
   };
 })();
