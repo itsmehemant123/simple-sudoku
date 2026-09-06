@@ -5,6 +5,8 @@ A sleek, client-side Sudoku web app — no build step, no dependencies, works fu
 ## Features
 
 - **Generated puzzles** with a local solver/generator (uniqueness-verified) at three difficulties: Easy (36 givens), Medium (30), Hard (25)
+- **Import custom boards** — paste an 81-cell string (digits 1-9; `0`/`.` for empty) to play it as a *Custom* game; validated for exactly one solution
+- **Share by link** — any game (generated or imported) has a copyable `#p=…&d=…` URL; opening it auto-starts the same puzzle (difficulty preserved for generated games)
 - **Candidates** — up to 9 per cell, toggled via the number pad in *Candidate* mode; 1 candidate renders as a large mark, 2+ as a mini 3×3 grid
 - **Cell awareness** — selecting a cell highlights its row, column, and 3×3 box
 - **Conflict highlighting** (toggleable) — selecting a number flags peer cells whose candidates clash; scans handle any number of candidates per cell
@@ -50,6 +52,7 @@ icons/            PWA + apple-touch icons
 
 - **Data model per game** (`Storage.games`): `{ key, difficulty, puzzle[81], solution[81], entries[81], candidates[81][], startTime, playMs, status, ... }`
   - `puzzle[i]` = givens (nonzero), `entries[i]` = player values, `candidates[i]` = array of 1–9.
+  - `difficulty` is `easy`/`medium`/`hard` for generated games, `custom` for imported/shared boards (stats get their own `custom` bucket).
   - **Gotcha:** givens live in `puzzle`, not `entries`. Any scan over the board (`findErrors`, `scanConflicts`, `checkWin`, `updatePadState`) reads the value as `entries[i] || puzzle[i]`.
 - **Input paths:** Value mode sets `entries[i]` (clearing candidates); Candidate mode toggles an entry in `candidates[i]`; Erase clears both.
 - **Status flow:** `in_progress` → `paused` (pause), `completed` (win), `abandoned` (Give Up). Leaving via **← Menu** keeps the game resumeable; **Give Up** requires confirmation and records it as abandoned.
@@ -60,7 +63,7 @@ icons/            PWA + apple-touch icons
 There is no in-repo test framework. Verification so far used headless-Chrome DOM harnesses (build a copy of `index.html` with absolute `file://` script paths + an injected test script, then `--dump-dom`). Quick sanity checks:
 
 ```sh
-node --check js/sudoku.js js/storage.js js/game.js js/app.js
+node --check js/sudoku.js js/storage.js js/sound.js js/game.js js/app.js sw.js
 ```
 
-Manual flow to smoke test: new game at each difficulty → value + candidate entry → conflict highlight → duplicate error (auto-check on) → Check Board (auto-check off) → pause/resume → Menu + resume from list → Give Up confirm → win detection → theme toggle (both themes) → refresh to confirm persistence.
+Manual flow to smoke test: new game at each difficulty → value + candidate entry → conflict highlight → duplicate error (auto-check on) → Check Board (auto-check off) → pause/resume → Menu + resume from list → Give Up confirm → win detection → theme toggle (both themes) → refresh to confirm persistence. For import/share: paste a valid and an invalid board → copy a generated-game link and open it (difficulty preserved) → copy an imported-game link and open it (opens as Custom).
