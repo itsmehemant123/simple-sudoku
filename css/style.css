@@ -741,9 +741,17 @@ html.compact #game-view.view {
 
 html.compact #game-view .app-header {
   margin: 0 0 8px;
-  padding-top: calc(6px + env(safe-area-inset-top));
-  padding-bottom: 6px;
+  padding: calc(6px + env(safe-area-inset-top)) 12px 6px;
+  gap: 8px;
 }
+
+html.compact #game-view .game-title { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+
+html.compact #game-view .header-controls { gap: 6px; }
+
+html.compact #game-view .app-header button { padding: 6px 10px; }
+html.compact #game-view .timer { padding: 4px 8px; }
+html.compact #game-view .icon-btn { padding: 6px 8px; }
 
 html.compact #game-view .game-body {
   flex: 1;
