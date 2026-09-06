@@ -16,6 +16,7 @@ A sleek, client-side Sudoku web app — no build step, no dependencies, works fu
 - **Home screen** — difficulty picker, resumeable games, history (capped at 50, scrollable), and stats (games, wins, win rate, streak, play time, best time per difficulty)
 - **Persistence** — every game gets a random key and is saved to `localStorage`, so mid-way games can be resumed later
 - **Installable PWA** — web app manifest + service worker; install it to the home screen (iOS Safari: Share → *Add to Home Screen*) or taskbar/dock (Chrome/Edge: install icon in the address bar)
+- **Mobile-friendly** — on phones the board and number pad fit one screen with no scrolling; landscape puts them side-by-side. The compact layout is visual-viewport driven, so it also kicks in when an iPad or desktop browser is pinch-zoomed in — the 1–9 pad never runs off the screen
 - **Light & dark glass themes**
 
 ## Run
@@ -37,12 +38,12 @@ python3 -m http.server 8080
 
 ```
 index.html        Home + Game views, number pad, modals
-css/style.css     Glass design system, light & dark themes via CSS variables
+css/style.css     Glass design system, light & dark themes via CSS variables, compact layout under html.compact
 js/sudoku.js      Solver + unique-solution puzzle generator
 js/storage.js     localStorage (games, stats, settings) + shared formatters
 js/sound.js       Web Audio click sounds (buttons + cells)
 js/game.js        Board rendering, input, highlights, checks, timer
-js/app.js         Home view, settings, theme, zoom, view routing
+js/app.js         Home view, settings, theme, zoom, view routing, visual-viewport compact layout
 manifest.json     PWA manifest (name, icons, standalone display)
 sw.js             Service worker (cache-first offline app shell)
 icons/            PWA + apple-touch icons
@@ -66,4 +67,6 @@ There is no in-repo test framework. Verification so far used headless-Chrome DOM
 node --check js/sudoku.js js/storage.js js/sound.js js/game.js js/app.js sw.js
 ```
 
-Manual flow to smoke test: new game at each difficulty → value + candidate entry → conflict highlight → duplicate error (auto-check on) → Check Board (auto-check off) → pause/resume → Menu + resume from list → Give Up confirm → win detection → theme toggle (both themes) → refresh to confirm persistence. For import/share: paste a valid and an invalid board → copy a generated-game link and open it (difficulty preserved) → copy an imported-game link and open it (opens as Custom).
+The compact layout is verified over CDP (not `--dump-dom`, since headless clamps `--window-size` to ~500px): `Emulation.setDeviceMetricsOverride` for phone widths, and `Page.addScriptToEvaluateOnNewDocument` stubbing `window.visualViewport` to simulate iPad pinch-zoom. Assert no horizontal overflow, the number pad stays inside the game-view, and portrait fits without scrolling.
+
+Manual flow to smoke test: new game at each difficulty → value + candidate entry → conflict highlight → duplicate error (auto-check on) → Check Board (auto-check off) → pause/resume → Menu + resume from list → Give Up confirm → win detection → theme toggle (both themes) → refresh to confirm persistence. For import/share: paste a valid and an invalid board → copy a generated-game link and open it (difficulty preserved) → copy an imported-game link and open it (opens as Custom). On a real phone/iPad: play in portrait and landscape, and pinch-zoom an iPad browser to confirm the pad stays fully on screen.
