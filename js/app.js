@@ -8,6 +8,7 @@ const App = (function () {
     const s = Storage.settings();
     applyTheme(s.theme);
     applyZoom(s.zoom);
+    bindViewport();
     bindControls();
     renderHome();
     showView('home');
@@ -88,6 +89,37 @@ const App = (function () {
   function shiftZoom(delta) {
     const s = Storage.settings();
     setZoom(ZOOM_STEPS[zoomIndex(s.zoom) + delta]);
+  }
+
+  /* ---------- compact / visual viewport ---------- */
+
+  /* Track the *visual* viewport (what is actually on screen) so phones,
+     iPad-browser pinch-zoom, and zoomed desktop windows all get the compact
+     one-screen layout. Media queries alone can't do this: vw/vh and @media
+     follow the layout viewport, which is unchanged by pinch-zoom. */
+  function updateCompact() {
+    const vv = window.visualViewport;
+    const w = vv ? vv.width : window.innerWidth;
+    const h = vv ? vv.height : window.innerHeight;
+    const ox = vv ? (vv.offsetLeft || 0) : 0;
+    const oy = vv ? (vv.offsetTop || 0) : 0;
+    document.documentElement.style.setProperty('--vvw', w + 'px');
+    document.documentElement.style.setProperty('--vvh', h + 'px');
+    document.documentElement.style.setProperty('--vvo-x', ox + 'px');
+    document.documentElement.style.setProperty('--vvo-y', oy + 'px');
+    const compact = Math.min(w, h) <= 640;
+    document.documentElement.classList.toggle('compact', compact);
+    document.documentElement.classList.toggle('compact-landscape', compact && w > h);
+  }
+
+  function bindViewport() {
+    updateCompact();
+    const vv = window.visualViewport;
+    if (vv) {
+      vv.addEventListener('resize', updateCompact);
+      vv.addEventListener('scroll', updateCompact);
+    }
+    window.addEventListener('resize', updateCompact);
   }
 
   /* ---------- import / share ---------- */

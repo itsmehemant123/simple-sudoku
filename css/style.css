@@ -119,6 +119,7 @@ body {
   color: var(--text);
   transition: background 0.25s ease, color 0.25s ease;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .view {
@@ -191,6 +192,8 @@ button {
   -webkit-backdrop-filter: blur(8px);
   transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease,
     border-color 0.15s ease, transform 0.06s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button:hover {
@@ -360,7 +363,7 @@ button.primary:hover {
   margin-top: 10px;
   padding: 10px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 13px;
+  font-size: 16px;
   line-height: 1.5;
   color: var(--text);
   background: var(--surface);
@@ -382,6 +385,7 @@ button.primary:hover {
   align-items: center;
   gap: 16px;
   padding: 10px 0;
+  min-height: 44px;
   cursor: pointer;
   border-bottom: 1px solid var(--glass-border);
 }
@@ -433,7 +437,7 @@ button.primary:hover {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 11px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--glass-border);
 }
 
@@ -514,6 +518,8 @@ button.primary:hover {
   justify-content: center;
   cursor: pointer;
   user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition: background 0.1s ease, filter 0.1s ease;
 }
 
@@ -703,6 +709,101 @@ button.primary:hover {
 
 /* ================= Misc ================= */
 ::selection { background: var(--accent); color: var(--accent-text); }
+
+/* ================= Compact layout =================
+   Driven by html.compact, toggled from js/app.js using the *visual* viewport
+   (window.visualViewport), so phones, iPad-browser pinch-zoom, and zoomed
+   desktop windows all get the same one-screen layout. This is required because
+   vw/vh and @media queries follow the layout viewport, which does not change
+   when the user pinches to zoom. */
+
+html.compact,
+html.compact body { overflow-x: hidden; }
+
+/* Portrait: fit board + controls into one screen with no page scroll. The
+   game view becomes a fixed overlay pinned to the *visual* viewport (translated
+   by the visual offset), so on a zoomed iPad the whole UI — pad included —
+   stays inside what is actually visible instead of being cut off at the
+   screen edge. */
+html.compact #game-view.view {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: var(--vvw);
+  height: var(--vvh);
+  transform: translate(calc(var(--vvo-x) * -1), calc(var(--vvo-y) * -1));
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+html.compact #game-view .app-header {
+  margin: 0 0 8px;
+  padding-top: calc(6px + env(safe-area-inset-top));
+  padding-bottom: 6px;
+}
+
+html.compact #game-view .game-body {
+  flex: 1;
+  min-height: 0;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 16px calc(8px + env(safe-area-inset-bottom));
+  overflow: hidden;
+}
+
+html.compact #game-view .board-wrap,
+html.compact #game-view .controls {
+  min-width: 0;
+}
+
+html.compact #game-view .board,
+html.compact #game-view .controls {
+  width: min(calc(var(--vvw) - 32px), 520px);
+}
+
+html.compact #game-view .board {
+  width: min(calc(var(--vvw) - 32px), calc(var(--vvh) - 300px), 520px);
+}
+
+html.compact #game-view .number-pad { min-width: 0; }
+html.compact #game-view .pad-btn { min-width: 0; min-height: 0; padding: 0; }
+
+/* Scale text off the *visual* width (--vvw) instead of layout vw, which is
+   wrong when a browser is pinch-zoomed in. */
+html.compact #game-view .pad-btn {
+  font-size: clamp(13px, calc(var(--vvw) * 0.045), 20px);
+}
+html.compact #game-view .cell .value {
+  font-size: clamp(14px, calc(var(--vvw) * 0.05), 26px);
+}
+html.compact #game-view .cand-grid {
+  font-size: clamp(8px, calc(var(--vvw) * 0.022), 11px);
+}
+html.compact #game-view .cand-grid .single {
+  font-size: clamp(10px, calc(var(--vvw) * 0.028), 14px);
+}
+
+/* Landscape: board on the left, controls on the right, using screen height. */
+html.compact.compact-landscape #game-view .game-body {
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 24px;
+}
+
+html.compact.compact-landscape #game-view .board {
+  width: min(calc(var(--vvh) * 0.7), calc(var(--vvw) * 0.58), 520px);
+}
+
+html.compact.compact-landscape #game-view .controls {
+  width: min(calc(var(--vvw) * 0.4), 360px);
+}
+
+/* Declutter the game header on small screens; zoom stays in Settings. */
+html.compact #game-view .zoom-header { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; }
