@@ -8,6 +8,9 @@ const Game = (function () {
   let timerHandle = null;
   let errorCells = [];
   let conflictCells = [];
+  let hintsOn = false;
+  let hintCells = [];
+  let hintElims = [];
 
   const boardEl = document.getElementById('board');
   const timerEl = document.getElementById('timer');
@@ -30,6 +33,8 @@ const Game = (function () {
   const difficultyLabel = document.getElementById('game-difficulty-label');
   const keyShortEl = document.getElementById('game-key-short');
   const modeHint = document.getElementById('mode-hint');
+  const hintToggle = document.getElementById('hint-toggle');
+  const hintMessage = document.getElementById('hint-message');
   const padBtns = [];
 
   function makeKey() {
@@ -118,6 +123,7 @@ const Game = (function () {
     keyShortEl.textContent = '#' + game.key.slice(0, 6).toUpperCase();
     setCheckButtonState();
     applyTimerVisibility();
+    updateHints();
     render();
     startTimer();
     App.showView('game');
@@ -235,6 +241,8 @@ const Game = (function () {
       else if (inInfluence(i)) cell.classList.add('hl');
       if (errorCells.includes(i)) cell.classList.add('error');
       if (conflictCells.includes(i)) cell.classList.add('conflict');
+      if (hintElims.includes(i)) cell.classList.add('hint-elim');
+      if (hintCells.includes(i)) cell.classList.add('hint-cell');
 
       cell.dataset.index = i;
       cell.addEventListener('click', () => selectCell(i));
@@ -276,6 +284,7 @@ const Game = (function () {
     if (paused) return;
     selected = i;
     recomputeConflicts();
+    updateHints();
     render();
   }
 
@@ -300,6 +309,54 @@ const Game = (function () {
       : 'Auto-check is off \u2014 use Check Board to review the grid.';
   }
 
+  /* ---------- hints ---------- */
+
+  /* With hints on, the selected cell's detected configurations (and any
+     eliminations they imply) are highlighted and explained. Highlights are
+     limited to cells that hold a value or the player's own candidates, and
+     detection reads derived candidates only — it never touches the notes. */
+  function hasContent(i) {
+    return !!((game.entries[i] || game.puzzle[i]) || game.candidates[i].length);
+  }
+
+  function updateHints() {
+    if (!hintsOn || !game || selected < 0) {
+      hintCells = [];
+      hintElims = [];
+      hintMessage.textContent = '';
+      return;
+    }
+    const cands = Techniques.deriveCandidates(game.puzzle, game.entries);
+    const hints = Techniques.findHintsForCell(cands, selected);
+    hintCells = [];
+    hintElims = [];
+    for (const h of hints) {
+      hintCells.push(...h.cells.filter(hasContent));
+      hintElims.push(...h.eliminations.filter(hasContent));
+    }
+    hintCells = [...new Set(hintCells)];
+    hintElims = [...new Set(hintElims)];
+    const visible = hints.find((h) =>
+      h.cells.some(hasContent) || h.eliminations.some(hasContent));
+    if (visible) {
+      hintMessage.textContent = visible.text +
+        (hints.length > 1 ? ' (+' + (hints.length - 1) + ' more)' : '');
+    } else if (hasContent(selected)) {
+      hintMessage.textContent = 'No technique found involving this cell yet.';
+    } else {
+      hintMessage.textContent = '';
+    }
+  }
+
+  function toggleHints() {
+    hintsOn = !hintsOn;
+    hintToggle.classList.toggle('on', hintsOn);
+    hintToggle.setAttribute('aria-pressed', String(hintsOn));
+    hintToggle.textContent = hintsOn ? 'Hints: On' : 'Hints: Off';
+    updateHints();
+    render();
+  }
+
   /* ---------- input ---------- */
 
   function setValue(i, v) {
@@ -307,7 +364,18 @@ const Game = (function () {
     if (game.puzzle[i] !== 0) return;
     game.entries[i] = v;
     game.candidates[i] = [];
+    if (v) clearPeerCandidates(i, v);
     afterInput(i);
+  }
+
+  /* Auto-clear: placing a digit removes it from the candidate notes of every
+     peer (row, column, and 3x3 box) so the notes stay in sync with the board. */
+  function clearPeerCandidates(i, v) {
+    for (const p of Sudoku.PEERS[i]) {
+      const cands = game.candidates[p];
+      const idx = cands.indexOf(v);
+      if (idx >= 0) cands.splice(idx, 1);
+    }
   }
 
   function toggleCandidate(i, v) {
@@ -326,6 +394,7 @@ const Game = (function () {
     saveNow();
     errorCells = Storage.settings().autoCheck ? findErrors() : [];
     recomputeConflicts();
+    updateHints();
     render();
     if (checkWin()) win();
   }
@@ -468,6 +537,7 @@ const Game = (function () {
     checkBtn.addEventListener('click', manualCheck);
     valueModeBtn.addEventListener('click', () => { inputMode = 'value'; setModeUI(); });
     candidateModeBtn.addEventListener('click', () => { inputMode = 'candidate'; setModeUI(); });
+    hintToggle.addEventListener('click', toggleHints);
     document.getElementById('win-play-again').addEventListener('click', () => {
       winModal.classList.add('hidden');
       startNew(currentDifficulty());

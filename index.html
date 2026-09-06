@@ -135,6 +135,7 @@
           <button id="value-mode-btn" class="mode-btn active">Value</button>
           <button id="candidate-mode-btn" class="mode-btn">Candidate</button>
         </div>
+        <button id="hint-toggle" class="hint-toggle" aria-pressed="false">Hints: Off</button>
         <p class="hint" id="mode-hint">Pick a number to place it in the selected cell.</p>
         <div id="number-pad" class="number-pad"></div>
         <div class="action-buttons">
@@ -142,6 +143,7 @@
           <button id="check-board-btn">Check Board</button>
         </div>
         <p class="hint" id="check-hint">Auto-check is off &mdash; use <em>Check Board</em> to review the grid.</p>
+        <p class="hint hint-message" id="hint-message"></p>
       </div>
     </div>
   </section>
@@ -191,6 +193,7 @@
   </div>
 
   <script src="js/sudoku.js"></script>
+  <script src="js/techniques.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/sound.js"></script>
   <script src="js/game.js"></script>

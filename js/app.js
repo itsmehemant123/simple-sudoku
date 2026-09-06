@@ -154,20 +154,48 @@ const App = (function () {
     return location.href.split('#')[0] + '#p=' + String(puzzleText || '').replace(/\s+/g, '');
   }
 
+  /* Opening a share link imports the puzzle, but the service worker reloads
+     the page on `controllerchange` right after first load — by then the URL
+     hash has been cleared, so the reloaded page must re-import from a pending
+     copy in sessionStorage. A timestamp bounds how long a stale pending share
+     can re-trigger (a normal refresh later must not yank you back). */
+  const PENDING_KEY = 'sudoku.pendingShare';
+  const PENDING_WINDOW = 20000;
+
+  function startShared(p, d) {
+    const err = Game.importPuzzle(p, d);
+    if (err) {
+      document.getElementById('import-input').value = p;
+      document.getElementById('import-error').textContent = err;
+      document.getElementById('import-modal').classList.remove('hidden');
+    }
+    return !err;
+  }
+
   function handleShareHash() {
     const hash = location.hash;
-    if (hash.indexOf('#p=') !== 0) return;
-    const params = new URLSearchParams(hash.slice(1));
-    const p = params.get('p');
-    if (p) {
-      const err = Game.importPuzzle(p, params.get('d') || undefined);
-      if (err) {
-        document.getElementById('import-input').value = p;
-        document.getElementById('import-error').textContent = err;
-        document.getElementById('import-modal').classList.remove('hidden');
+    if (hash.indexOf('#p=') === 0) {
+      const params = new URLSearchParams(hash.slice(1));
+      const p = params.get('p');
+      if (p) {
+        try {
+          sessionStorage.setItem(PENDING_KEY, JSON.stringify({
+            p, d: params.get('d') || undefined, at: Date.now(),
+          }));
+        } catch (e) {}
+        startShared(p, params.get('d') || undefined);
       }
+      history.replaceState(null, '', location.pathname + location.search);
+      return;
     }
-    history.replaceState(null, '', location.pathname + location.search);
+    let pending = null;
+    try {
+      pending = JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null');
+    } catch (e) {}
+    if (pending && Date.now() - pending.at < PENDING_WINDOW) {
+      startShared(pending.p, pending.d);
+    }
+    try { sessionStorage.removeItem(PENDING_KEY); } catch (e) {}
   }
 
   /* ---------- home rendering ---------- */
