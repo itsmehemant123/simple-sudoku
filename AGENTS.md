@@ -29,11 +29,11 @@ Scripts expose IIFE namespaces on `window`: `Sudoku`, `Storage`, `Game`, `App`.
 
 | File | Responsibility |
 |---|---|
-| `js/sudoku.js` | Solver + unique-solution puzzle generator (`Sudoku.generatePuzzle(difficulty)`, `Sudoku.solve`, `Sudoku.PEERS`). |
-| `js/storage.js` | `localStorage` persistence + shared formatters. |
+| `js/sudoku.js` | Solver + unique-solution puzzle generator (`Sudoku.generatePuzzle`, `Sudoku.solve`, `Sudoku.PEERS`) + board parsing/encoding (`parseAndValidate`, `encodePuzzle`). |
+| `js/storage.js` | `localStorage` persistence + shared formatters (`cap`, `formatStatus`). |
 | `js/sound.js` | Web Audio click sounds for buttons and cells (disabled by default). |
-| `js/game.js` | Game controller: board render, input, highlights, checks, timer, win/pause/give-up. |
-| `js/app.js` | Home view rendering, settings toggles, theme, zoom, view routing. |
+| `js/game.js` | Game controller: board render, input, highlights, checks, timer, win/pause/give-up, custom import (`importPuzzle`), share links (`shareLink`). |
+| `js/app.js` | Home view, settings, theme, zoom, view routing, import modal, share-link auto-start. |
 | `css/style.css` | Glass design system. Themes are CSS variables under `html[data-theme="light"]` / `html[data-theme="dark"]`. |
 | `index.html` | Both views (home + game), number pad, modals. |
 | `sw.js` | Cache-first service worker. `CACHE` constant is the cache version. |
@@ -50,6 +50,10 @@ Scripts expose IIFE namespaces on `window`: `Sudoku`, `Storage`, `Game`, `App`.
 7. **Theme parity.** New styling must work in both themes. Use CSS variables, not hard-coded colors. `--candidate` should stay visually distinct from value colors (smaller, lighter weight, muted gray).
 8. **Persistence.** Every input path calls `saveNow()`; `beforeunload` also saves. Game state must survive reload for resume.
 9. **Service worker cache version.** Whenever you change any file listed in `ASSETS` in `sw.js` (`index.html`, `css/`, `js/`, `manifest.json`, `favicon.svg`, `icons/`), bump the `CACHE` constant (e.g. `sudoku-v2` → `sudoku-v3`). The SW is cache-first and otherwise keeps serving stale app files. `app.js` auto-reloads once on `controllerchange`, so a normal refresh picks up the new version.
+10. **Custom games (`difficulty: 'custom'`).** Imported/shared boards use difficulty `'custom'`, not easy/medium/hard. `Storage.cap('custom')` → "Custom"; stats land in the `custom` bucket of `bestTimes`/`winsByDifficulty`. All code that formats difficulty must keep working for `'custom'`.
+11. **Import validation must not hang.** `Sudoku.parseAndValidate` requires exactly one solution and checks duplicates first, then calls `solve(puzzle, 2, maxNodes)` with a node budget. `solve(grid, limit, maxNodes)` sets `out.exhausted` when the budget is hit; `parseAndValidate` rejects that as "too sparse to validate". Never run an unbounded `solve(puzzle, 2)` on user input — a conflicting/sparse board forces exponential search and freezes the tab.
+12. **Share links are givens-only** — `#p=<81-char>&d=<difficulty>` (`d` omitted for custom). Opening a link imports via `Game.importPuzzle(p, d)` and the hash is cleared with `history.replaceState` so refresh doesn't re-import. The hash auto-start must run **deferred** (`setTimeout(handleShareHash, 0)` in `App.init`): calling `Game.importPuzzle` synchronously from inside `App`'s own IIFE triggers `App.showView` while `App` is still in the temporal dead zone and throws.
+13. **Difficulty-button binding.** Only buttons with `data-difficulty` get the `Game.startNew` handler — scope the selector to `.diff-btn[data-difficulty]` so non-difficulty buttons styled like `diff-btn` (e.g. `#import-btn`) don't start games.
 
 ## Difficulty tuning
 
@@ -64,3 +68,5 @@ node --check js/sudoku.js js/storage.js js/sound.js js/game.js js/app.js sw.js
 ```
 
 For behavioral checks, manual testing in a browser (see README "Verification" for the flow). If writing automated checks, use the existing pattern: a temp copy of `index.html` with script/CSS `src` rewritten to absolute `file://` paths plus an injected test `<script>` that writes results into a `<pre id="results">`, then drive it with headless Chrome (`--headless=new --virtual-time-budget=8000 --dump-dom`) and read the `pre`. Note `virtual-time-budget` does not settle CSS transitions — disable `body` transition in the harness if reading computed styles.
+
+Headless Chrome can be flaky/hang in some environments. A dependency-free fallback is a Node script that stubs `document`/`window`/`localStorage`/`location` (elements with `classList`, `addEventListener`, `style.setProperty`, etc.), loads the IIFE scripts with `vm.runInThisContext`, and flushes deferred callbacks (`setTimeout(..., 0)`) — this reproduces load-time flow including the deferred share-hash import. Pure logic (`parseAndValidate`, `encodePuzzle`, `solve` budget) can be exercised directly in Node by `vm.runInThisContext`-loading `js/sudoku.js`.
