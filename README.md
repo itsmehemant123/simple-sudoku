@@ -13,11 +13,11 @@ A sleek, client-side Sudoku web app — no build step, no dependencies, works fu
 - **In-game hints** — a *Hints* toggle in the game view; tapping a cell then highlights any detected technique involving it (Hidden/Naked Single, Locked Candidates, pairs/triples, X-Wing, Swordfish, Finned X-Wing, XY/XYZ-Wing, W-Wing, Skyscraper, Two-String Kite, Unique Rectangle) and explains the elimination in a line under the board. Detection is read-only and uses derived candidates, never your notes; highlights appear only on cells that already hold a value or your own candidates
 - **Error checking** — off by default; when enabled, duplicates are flagged red on entry. A **Check Board** button (active only when auto-check is off) scans the whole grid
 - **Completed-digit lock** — once a digit has all 9 placements, its pad button is disabled
-- **Timer + Pause/Resume** (timer display can be hidden from Settings), plus **Give Up** (with confirm) that records an abandoned game
+- **Timer + Pause/Resume** (timer display can be hidden from Settings), plus **Give Up** (with confirm) that records an abandoned game, and **Clear Board** (with confirm) that wipes all your entries and notes while keeping the givens and the running clock
 - **Home screen** — difficulty picker, resumeable games, history (capped at 50, scrollable), and stats (games, wins, win rate, streak, play time, best time per difficulty)
 - **Persistence** — every game gets a random key and is saved to `localStorage`, so mid-way games can be resumed later
 - **Installable PWA** — web app manifest + service worker; install it to the home screen (iOS Safari: Share → *Add to Home Screen*) or taskbar/dock (Chrome/Edge: install icon in the address bar)
-- **Mobile-friendly** — on phones the board and number pad fit one screen with no scrolling; landscape puts them side-by-side. The compact layout is visual-viewport driven, so it also kicks in when an iPad or desktop browser is pinch-zoomed in — the 1–9 pad never runs off the screen
+- **Mobile-friendly** — on phones the board and number pad fit one screen with no scrolling when they fit, and the view scrolls vertically if the header + board + controls are taller than the viewport (so the board top is never clipped); landscape puts them side-by-side. The compact layout is visual-viewport driven, so it also kicks in when an iPad or desktop browser is pinch-zoomed in — the 1–9 pad never runs off the screen
 - **Light & dark glass themes**
 
 ## Run

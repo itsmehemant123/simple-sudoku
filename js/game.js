@@ -23,6 +23,10 @@ const Game = (function () {
   const checkBtn = document.getElementById('check-board-btn');
   const checkHint = document.getElementById('check-hint');
   const eraseBtn = document.getElementById('erase-btn');
+  const clearBtn = document.getElementById('clear-board-btn');
+  const clearModal = document.getElementById('clear-modal');
+  const clearConfirm = document.getElementById('clear-confirm');
+  const clearCancel = document.getElementById('clear-cancel');
   const valueModeBtn = document.getElementById('value-mode-btn');
   const candidateModeBtn = document.getElementById('candidate-mode-btn');
   const winModal = document.getElementById('win-modal');
@@ -524,6 +528,35 @@ const Game = (function () {
     App.showHome();
   }
 
+  /* ---------- clear board ---------- */
+
+  function confirmClear() {
+    if (paused || !game) return;
+    clearModal.classList.remove('hidden');
+  }
+
+  /* Wipe every player entry and candidate, keeping the givens and the running
+     clock. The game continues from a blank board. */
+  function clearBoard() {
+    if (!game) return;
+    for (let i = 0; i < 81; i++) {
+      if (game.puzzle[i] === 0) {
+        game.entries[i] = 0;
+        game.candidates[i] = [];
+      }
+    }
+    clearModal.classList.add('hidden');
+    errorCells = [];
+    conflictCells = [];
+    saveNow();
+    updateHints();
+    render();
+  }
+
+  function cancelClear() {
+    clearModal.classList.add('hidden');
+  }
+
   /* ---------- events ---------- */
 
   function bind() {
@@ -534,6 +567,9 @@ const Game = (function () {
     giveupCancel.addEventListener('click', cancelQuit);
     backBtn.addEventListener('click', backToMenu);
     eraseBtn.addEventListener('click', () => { if (selected >= 0) setValue(selected, 0); });
+    clearBtn.addEventListener('click', confirmClear);
+    clearConfirm.addEventListener('click', clearBoard);
+    clearCancel.addEventListener('click', cancelClear);
     checkBtn.addEventListener('click', manualCheck);
     valueModeBtn.addEventListener('click', () => { inputMode = 'value'; setModeUI(); });
     candidateModeBtn.addEventListener('click', () => { inputMode = 'candidate'; setModeUI(); });

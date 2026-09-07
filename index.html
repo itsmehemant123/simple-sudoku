@@ -141,6 +141,7 @@
         <div class="action-buttons">
           <button id="erase-btn">Erase</button>
           <button id="check-board-btn">Check Board</button>
+          <button id="clear-board-btn">Clear Board</button>
         </div>
         <p class="hint" id="check-hint">Auto-check is off &mdash; use <em>Check Board</em> to review the grid.</p>
         <p class="hint hint-message" id="hint-message"></p>
@@ -188,6 +189,17 @@
       <div class="stack">
         <button id="giveup-confirm" class="primary">Yes, Give Up</button>
         <button id="giveup-cancel">Keep Playing</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="clear-modal" class="modal hidden">
+    <div class="modal-box">
+      <h2>Clear Board?</h2>
+      <p class="hint" style="margin-top:0">This erases all of your entries and candidate notes. The puzzle (given numbers) stays the same and the game keeps running.</p>
+      <div class="stack">
+        <button id="clear-confirm" class="primary">Yes, Clear</button>
+        <button id="clear-cancel">Keep Going</button>
       </div>
     </div>
   </div>
