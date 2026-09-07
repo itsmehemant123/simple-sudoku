@@ -37,6 +37,16 @@ const Techniques = (function () {
     return list.map(cellName).join(', ');
   }
 
+  /* Plain-language cell reference ("row 4, column 7") — matches the Indexes
+     toggle labels so players can find cells without R/C jargon. */
+  function friendlyCell(i) {
+    return 'row ' + (Math.floor(i / 9) + 1) + ', column ' + ((i % 9) + 1);
+  }
+
+  function friendlyList(list) {
+    return list.map(friendlyCell).join(', ');
+  }
+
   function combos(arr, k) {
     const res = [];
     const n = arr.length;
@@ -88,6 +98,7 @@ const Techniques = (function () {
         const v = cands[i][0];
         hints.push({
           technique: 'Naked Single', cells: [i], digit: v, eliminations: [],
+          keyCells: [i],
           text: 'Naked Single: ' + cellName(i) + ' must be ' + v + '.',
         });
       }
@@ -105,6 +116,7 @@ const Techniques = (function () {
           if (cands[i].length === 1) continue;
           hints.push({
             technique: 'Hidden Single', cells: [i], digit: d, eliminations: [],
+            unit: name, keyCells: [i],
             text: 'Hidden Single: ' + cellName(i) + ' must be ' + d + ' (only place in ' + name + ').',
           });
         }
@@ -133,6 +145,7 @@ const Techniques = (function () {
           if (elims.length) {
             hints.push({
               technique: 'Locked Candidates (Pointing)', cells, digit: d, eliminations: elims,
+              unit: 'row ' + (r + 1), box: boxOf(cells[0]) + 1,
               text: 'Pointing: ' + d + ' confined to row ' + (r + 1) + ' in box ' + (boxOf(cells[0]) + 1) +
                 ' \u2014 removes ' + d + ' from ' + nameList(elims) + '.',
             });
@@ -150,6 +163,7 @@ const Techniques = (function () {
           if (elims.length) {
             hints.push({
               technique: 'Locked Candidates (Pointing)', cells, digit: d, eliminations: elims,
+              unit: 'column ' + (c + 1), box: boxOf(cells[0]) + 1,
               text: 'Pointing: ' + d + ' confined to column ' + (c + 1) + ' in box ' + (boxOf(cells[0]) + 1) +
                 ' \u2014 removes ' + d + ' from ' + nameList(elims) + '.',
             });
@@ -173,6 +187,8 @@ const Techniques = (function () {
         if (elims.length) {
           hints.push({
             technique: 'Locked Candidates (Claiming)', cells, digit: d, eliminations: elims,
+            unit: 'box ' + (b + 1),
+            lineUnit: (isRow ? 'row ' : 'column ') + ((isRow ? Math.floor(unit[0] / 9) : unit[0] % 9) + 1),
             text: 'Claiming: ' + d + ' confined to box ' + (b + 1) + ' in ' + (isRow ? 'row ' : 'column ') +
               ((isRow ? Math.floor(unit[0] / 9) : unit[0] % 9) + 1) + ' \u2014 removes ' + d + ' from ' + nameList(elims) + '.',
           });
@@ -199,6 +215,7 @@ const Techniques = (function () {
         if (elims.length) {
           hints.push({
             technique: 'Naked ' + label, cells: combo, digit: [...union][0], eliminations: elims,
+            unit: name, digits: [...union],
             text: 'Naked ' + label + ' in ' + name + ': ' + nameList(combo) + ' limited to {' +
               [...union].join(',') + '} \u2014 removes those from ' + nameList(elims) + '.',
           });
@@ -224,6 +241,7 @@ const Techniques = (function () {
         if (elims.length) {
           hints.push({
             technique: 'Hidden ' + label, cells: spotArr, digit: digitCombo[0], eliminations: elims,
+            unit: name, digits: [...digitCombo],
             text: 'Hidden ' + label + ' in ' + name + ': digits {' + digitCombo.join(',') + '} only in ' +
               nameList(spotArr) + ' \u2014 removes other candidates from those cells.',
           });
@@ -270,6 +288,10 @@ const Techniques = (function () {
             const crossWord = line === 'row' ? 'columns' : 'rows';
             hints.push({
               technique: label, cells, digit: d, eliminations: elims,
+              lines: combo.map((o) => o.li + 1),
+              crossLines: union.map((c) => c + 1),
+              lineWord: line === 'row' ? 'row' : 'column',
+              crossWord: line === 'row' ? 'column' : 'row',
               text: label + ' on ' + d + ': ' + lineWord + ' ' +
                 combo.map((o) => o.li + 1).join(',') + ' / ' + crossWord + ' ' +
                 union.map((c) => c + 1).join(',') + ' \u2014 removes ' + d + ' from ' + nameList(elims) + '.',
@@ -331,6 +353,7 @@ const Techniques = (function () {
             if (elims.length) {
               hints.push({
                 technique: 'Finned X-Wing', cells: [...baseCells, finCell], digit: d, eliminations: elims,
+                baseCells, finCell,
                 text: 'Finned X-Wing on ' + d + ': base at ' + nameList(baseCells) +
                   ' with fin ' + cellName(finCell) + ' \u2014 removes ' + d + ' from ' + nameList(elims) + '.',
               });
@@ -366,6 +389,7 @@ const Techniques = (function () {
           if (elims.length) {
             hints.push({
               technique: 'XY-Wing', cells: [p, w1, w2], digit: z, eliminations: elims,
+              pivot: p, wings: [w1, w2],
               text: 'XY-Wing: pivot ' + cellName(p) + ' {' + a + ',' + b + '}, wings ' +
                 cellName(w1) + ' & ' + cellName(w2) + ' \u2014 removes ' + z + ' from ' + nameList(elims) + '.',
             });
@@ -401,6 +425,7 @@ const Techniques = (function () {
             if (elims.length) {
               hints.push({
                 technique: 'XYZ-Wing', cells: [p, w1, w2], digit: z, eliminations: elims,
+                pivot: p, wings: [w1, w2],
                 text: 'XYZ-Wing: pivot ' + cellName(p) + ' {' + pc.join(',') + '}, wings ' +
                   cellName(w1) + ' & ' + cellName(w2) + ' \u2014 removes ' + z + ' from ' + nameList(elims) + '.',
               });
@@ -431,6 +456,7 @@ const Techniques = (function () {
         if (elims.length) {
           hints.push({
             technique: 'W-Wing', cells: [a, b], digit: x, eliminations: elims,
+            pair: ca, linkDigit: y,
             text: 'W-Wing on {' + x + ',' + y + '}: ' + cellName(a) + ' & ' + cellName(b) +
               ' linked on ' + y + ' \u2014 removes ' + x + ' from ' + nameList(elims) + '.',
           });
@@ -495,6 +521,7 @@ const Techniques = (function () {
             if (elims.length) {
               hints.push({
                 technique: 'Skyscraper', cells: [base1, base2c, top1, top2], digit: d, eliminations: elims,
+                tops: [top1, top2],
                 text: 'Skyscraper on ' + d + ': ' + cellName(top1) + ' & ' + cellName(top2) +
                   ' over base ' + (line === 'row' ? 'column ' : 'row ') + (base + 1) +
                   ' \u2014 removes ' + d + ' from ' + nameList(elims) + '.',
@@ -537,6 +564,7 @@ const Techniques = (function () {
                 if (!cands[target].includes(d)) continue;
                 hints.push({
                   technique: 'Two-String Kite', cells: [A, B, C, D], digit: d, eliminations: [target],
+                  target,
                   text: 'Two-String Kite on ' + d + ': box ' + (boxOf(A) + 1) + ' diagonal ' +
                     cellName(A) + '/' + cellName(B) + ', strings ' + cellName(C) + ' & ' + cellName(D) +
                     ' \u2014 removes ' + d + ' from ' + cellName(target) + '.',
@@ -574,6 +602,7 @@ const Techniques = (function () {
             const e = cells[extraIdx];
             hints.push({
               technique: 'Unique Rectangle (Type 1)', cells, digit: a, eliminations: [e],
+              extraCell: e, pair: [a, b],
               text: 'Unique Rectangle on {' + a + ',' + b + '}: ' + nameList(cells) +
                 ' \u2014 removes ' + a + '/' + b + ' from ' + cellName(e) + '.',
             });
@@ -635,10 +664,184 @@ const Techniques = (function () {
     return null;
   }
 
+  /* ---------- friendly explanation ---------- */
+
+  /* Plain-English glossary blurb per technique (progressive disclosure). */
+  const TECHNIQUE_INFO = {
+    'Naked Single': {
+      name: 'Naked Single',
+      blurb: 'This cell has only one possible digit left — the one shown.',
+    },
+    'Hidden Single': {
+      name: 'Hidden Single',
+      blurb: 'In a row, column, or box, this digit has only one place left to go.',
+    },
+    'Locked Candidates (Pointing)': {
+      name: 'Pointing',
+      blurb: 'Inside a box, a digit is limited to a single row or column, so it can be removed from the rest of that row or column.',
+    },
+    'Locked Candidates (Claiming)': {
+      name: 'Claiming',
+      blurb: 'Within a row or column, a digit is limited to a single box, so it can be removed from the rest of that box.',
+    },
+    'Naked Pair': {
+      name: 'Naked Pair',
+      blurb: 'Two cells in a unit share exactly the same two candidates; those digits can be removed from the rest of the unit.',
+    },
+    'Naked Triple': {
+      name: 'Naked Triple',
+      blurb: 'Three cells in a unit are limited to exactly three digits; those digits can be removed from the rest of the unit.',
+    },
+    'Hidden Pair': {
+      name: 'Hidden Pair',
+      blurb: 'Two digits in a unit appear only in the same two cells; other candidates can be removed from those cells.',
+    },
+    'Hidden Triple': {
+      name: 'Hidden Triple',
+      blurb: 'Three digits in a unit appear only in the same three cells; other candidates can be removed from those cells.',
+    },
+    'X-Wing': {
+      name: 'X-Wing',
+      blurb: 'A digit appears in two rows at exactly the same two columns (or the reverse), forming a rectangle — it is removed from the other cells in those columns (or rows).',
+    },
+    'Swordfish': {
+      name: 'Swordfish',
+      blurb: 'Like an X-Wing, but across three rows and three columns instead of two.',
+    },
+    'Finned X-Wing': {
+      name: 'Finned X-Wing',
+      blurb: 'An almost-X-Wing with one extra cell (the fin); the digit is removed from the aligned cells of the fin\u2019s box.',
+    },
+    'XY-Wing': {
+      name: 'XY-Wing',
+      blurb: 'A pivot cell sees two wings; the digit the wings share can be removed from any cell that sees both wings.',
+    },
+    'XYZ-Wing': {
+      name: 'XYZ-Wing',
+      blurb: 'A three-candidate pivot sees two bivalue wings; the pivot\u2019s extra digit can be removed from cells that see all three.',
+    },
+    'W-Wing': {
+      name: 'W-Wing',
+      blurb: 'Two cells share the same pair and are the only places for one of its digits in their unit; the other digit is removed from cells that see both.',
+    },
+    'Skyscraper': {
+      name: 'Skyscraper',
+      blurb: 'Two lines each hold a digit in exactly two cells; the digit is removed from cells that see both far ends.',
+    },
+    'Two-String Kite': {
+      name: 'Two-String Kite',
+      blurb: 'A box\u2019s diagonal pair plus two connecting strings form a kite; the digit is removed where the strings cross.',
+    },
+    'Unique Rectangle (Type 1)': {
+      name: 'Unique Rectangle',
+      blurb: 'Four rectangle corners share the same two digits; to avoid an unsolvable pattern, one corner must lose those digits.',
+    },
+  };
+
+  /* Friendly, instance-specific explanation for a hint: { name, steps, blurb }. */
+  function hintInfo(hint) {
+    const meta = TECHNIQUE_INFO[hint.technique] || { name: hint.technique, blurb: '' };
+    const d = hint.digit;
+    let steps;
+    switch (hint.technique) {
+      case 'Naked Single':
+        steps = ['This cell can only hold ' + d + '.'];
+        break;
+      case 'Hidden Single':
+        steps = ['In ' + hint.unit + ', the digit ' + d + ' can only go in this cell.'];
+        break;
+      case 'Locked Candidates (Pointing)':
+        steps = [
+          'Inside box ' + hint.box + ', the digit ' + d + ' can only be in ' + hint.unit + '.',
+          'So ' + d + ' is removed from the other cells in ' + hint.unit + '.',
+        ];
+        break;
+      case 'Locked Candidates (Claiming)':
+        steps = [
+          'In ' + hint.lineUnit + ', the digit ' + d + ' only appears inside ' + hint.unit + '.',
+          'So ' + d + ' is removed from the other cells in ' + hint.unit + '.',
+        ];
+        break;
+      case 'Naked Pair':
+      case 'Naked Triple':
+        steps = [
+          'These cells in ' + hint.unit + ' can only contain {' + hint.digits.join(', ') + '}.',
+          'So those digits are removed from the other cells in ' + hint.unit + '.',
+        ];
+        break;
+      case 'Hidden Pair':
+      case 'Hidden Triple':
+        steps = [
+          'In ' + hint.unit + ', the digits {' + hint.digits.join(', ') + '} can only go in these cells.',
+          'So the other candidates are removed from those cells.',
+        ];
+        break;
+      case 'X-Wing':
+      case 'Swordfish':
+        steps = [
+          'The digit ' + d + ' appears only in ' + hint.lineWord + 's ' + hint.lines.join(' and ') +
+            ', and only in ' + hint.crossWord + 's ' + hint.crossLines.join(' and ') + '.',
+          'So ' + d + ' is removed from the other cells in those ' + hint.crossWord + 's.',
+        ];
+        break;
+      case 'Finned X-Wing':
+        steps = [
+          'There is almost an X-Wing on ' + d + ', with one extra cell (the fin) at ' + friendlyCell(hint.finCell) + '.',
+          'So ' + d + ' is removed from the other cells in that box along the fin\u2019s line.',
+        ];
+        break;
+      case 'XY-Wing':
+        steps = [
+          'The pivot at ' + friendlyCell(hint.pivot) + ' can be two digits.',
+          'Both wings (' + friendlyList(hint.wings) + ') contain ' + d + '.',
+          'So ' + d + ' is removed from any cell that sees both wings.',
+        ];
+        break;
+      case 'XYZ-Wing':
+        steps = [
+          'The pivot at ' + friendlyCell(hint.pivot) + ' can be three digits.',
+          'Both wings (' + friendlyList(hint.wings) + ') contain ' + d + '.',
+          'So ' + d + ' is removed from cells that see both wings.',
+        ];
+        break;
+      case 'W-Wing':
+        steps = [
+          'These two cells can only be {' + hint.pair.join(', ') + '}.',
+          'They are the only cells holding ' + hint.linkDigit + ' in their shared unit.',
+          'So ' + d + ' is removed from cells that see both.',
+        ];
+        break;
+      case 'Skyscraper':
+        steps = [
+          'The digit ' + d + ' has exactly two places in each of these lines.',
+          'The far ends (' + friendlyList(hint.tops) + ') rule each other out, so ' + d + ' is removed from cells that see both.',
+        ];
+        break;
+      case 'Two-String Kite':
+        steps = [
+          'In this box, ' + d + ' sits on a diagonal.',
+          'Strings extend from the diagonal through the row and column.',
+          'So ' + d + ' is removed from ' + friendlyCell(hint.target) + ', where the strings meet.',
+        ];
+        break;
+      case 'Unique Rectangle (Type 1)':
+        steps = [
+          'These four corners form a rectangle on {' + hint.pair.join(', ') + '}.',
+          'If all four kept those digits the puzzle would be ambiguous.',
+          'So ' + hint.pair.join(' or ') + ' is removed from ' + friendlyCell(hint.extraCell) + '.',
+        ];
+        break;
+      default:
+        steps = [];
+    }
+    return { name: meta.name, steps, blurb: meta.blurb };
+  }
+
   return {
     deriveCandidates,
     findHintsForCell,
     findHint,
     allHints,
+    hintInfo,
   };
 })();

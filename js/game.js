@@ -9,8 +9,10 @@ const Game = (function () {
   let errorCells = [];
   let conflictCells = [];
   let hintsOn = false;
-  let hintCells = [];
-  let hintElims = [];
+  let hintItems = [];
+  let hintCells = new Set();
+  let hintElims = new Map();
+  let hintKeys = new Set();
 
   const boardEl = document.getElementById('board');
   const timerEl = document.getElementById('timer');
@@ -39,7 +41,8 @@ const Game = (function () {
   const modeHint = document.getElementById('mode-hint');
   const hintToggle = document.getElementById('hint-toggle');
   const indexToggle = document.getElementById('index-toggle');
-  const hintMessage = document.getElementById('hint-message');
+  const hintPanel = document.getElementById('hint-panel');
+  const nextMoveBtn = document.getElementById('next-move-btn');
   const padBtns = [];
 
   function makeKey() {
@@ -128,6 +131,7 @@ const Game = (function () {
     keyShortEl.textContent = '#' + game.key.slice(0, 6).toUpperCase();
     setCheckButtonState();
     setIndexButton();
+    nextMoveBtn.classList.toggle('hidden', !hintsOn);
     applyTimerVisibility();
     updateHints();
     render();
@@ -228,15 +232,18 @@ const Game = (function () {
       } else if (cands.length) {
         const grid = document.createElement('div');
         grid.className = 'cand-grid';
+        const elimDigit = hintElims.get(i);
         if (cands.length === 1) {
           const span = document.createElement('span');
           span.className = 'single';
           span.textContent = cands[0];
+          if (elimDigit === cands[0]) span.classList.add('elim-digit');
           grid.appendChild(span);
         } else {
           for (let d = 1; d <= 9; d++) {
             const span = document.createElement('span');
             span.textContent = cands.includes(d) ? d : '';
+            if (d === elimDigit && cands.includes(d)) span.classList.add('elim-digit');
             grid.appendChild(span);
           }
         }
@@ -247,8 +254,9 @@ const Game = (function () {
       else if (inInfluence(i)) cell.classList.add('hl');
       if (errorCells.includes(i)) cell.classList.add('error');
       if (conflictCells.includes(i)) cell.classList.add('conflict');
-      if (hintElims.includes(i)) cell.classList.add('hint-elim');
-      if (hintCells.includes(i)) cell.classList.add('hint-cell');
+      if (hintElims.has(i)) cell.classList.add('hint-elim');
+      if (hintKeys.has(i)) cell.classList.add('hint-key');
+      if (hintCells.has(i)) cell.classList.add('hint-cell');
 
       cell.dataset.index = i;
       cell.addEventListener('click', () => selectCell(i));
@@ -347,37 +355,113 @@ const Game = (function () {
      eliminations they imply) are highlighted and explained. Highlights are
      limited to cells that hold a value or the player's own candidates, and
      detection reads derived candidates only — it never touches the notes. */
+  const MAX_HINT_ITEMS = 4;
+
   function hasContent(i) {
     return !!((game.entries[i] || game.puzzle[i]) || game.candidates[i].length);
   }
 
   function updateHints() {
     if (!hintsOn || !game || selected < 0) {
-      hintCells = [];
-      hintElims = [];
-      hintMessage.textContent = '';
+      applyHintState([]);
       return;
     }
     const cands = Techniques.deriveCandidates(game.puzzle, game.entries);
-    const hints = Techniques.findHintsForCell(cands, selected);
-    hintCells = [];
-    hintElims = [];
-    for (const h of hints) {
-      hintCells.push(...h.cells.filter(hasContent));
-      hintElims.push(...h.eliminations.filter(hasContent));
+    const hints = Techniques.findHintsForCell(cands, selected)
+      .filter((h) => h.cells.some(hasContent) || h.eliminations.some(hasContent));
+    applyHintState(hints);
+  }
+
+  /* Rebuild board marks (hintCells / hintElims / hintKeys) and the explanation
+     panel from the active hint list. Callers follow with render(). */
+  function applyHintState(items) {
+    hintItems = items;
+    hintCells = new Set();
+    hintElims = new Map();
+    hintKeys = new Set();
+    for (const h of items) {
+      for (const c of h.cells) if (hasContent(c)) hintCells.add(c);
+      for (const e of h.eliminations) if (hasContent(e)) hintElims.set(e, h.digit);
+      for (const k of (h.keyCells || [])) if (hasContent(k)) hintKeys.add(k);
     }
-    hintCells = [...new Set(hintCells)];
-    hintElims = [...new Set(hintElims)];
-    const visible = hints.find((h) =>
-      h.cells.some(hasContent) || h.eliminations.some(hasContent));
-    if (visible) {
-      hintMessage.textContent = visible.text +
-        (hints.length > 1 ? ' (+' + (hints.length - 1) + ' more)' : '');
-    } else if (hasContent(selected)) {
-      hintMessage.textContent = 'No technique found involving this cell yet.';
+    renderHintPanel();
+  }
+
+  /* Friendly explanation panel: one collapsible item per hint (title + steps,
+     with the glossary blurb revealed on tap). The panel reserves space so the
+     pinned compact board never shifts when hints appear or clear. */
+  function renderHintPanel() {
+    hintPanel.innerHTML = '';
+    if (!hintItems.length) return;
+    for (const h of hintItems.slice(0, MAX_HINT_ITEMS)) {
+      const info = Techniques.hintInfo(h);
+      const item = document.createElement('div');
+      item.className = 'hint-item';
+      const title = document.createElement('button');
+      title.className = 'hint-title';
+      title.type = 'button';
+      title.setAttribute('aria-expanded', 'false');
+      const label = document.createElement('span');
+      label.textContent = info.name;
+      const chev = document.createElement('span');
+      chev.className = 'hint-chev';
+      chev.textContent = '\u25BE';
+      title.appendChild(label);
+      title.appendChild(chev);
+      const body = document.createElement('div');
+      body.className = 'hint-body';
+      body.hidden = true;
+      for (const step of info.steps) {
+        const p = document.createElement('p');
+        p.textContent = step;
+        body.appendChild(p);
+      }
+      if (info.blurb) {
+        const more = document.createElement('p');
+        more.className = 'hint-more';
+        more.textContent = info.blurb;
+        body.appendChild(more);
+      }
+      title.addEventListener('click', () => {
+        const open = body.hidden;
+        body.hidden = !open;
+        title.setAttribute('aria-expanded', String(open));
+        item.classList.toggle('open', open);
+      });
+      item.appendChild(title);
+      item.appendChild(body);
+      hintPanel.appendChild(item);
+    }
+    if (hintItems.length > MAX_HINT_ITEMS) {
+      const more = document.createElement('p');
+      more.className = 'hint-more';
+      more.textContent = 'and ' + (hintItems.length - MAX_HINT_ITEMS) + ' more\u2026';
+      hintPanel.appendChild(more);
+    }
+  }
+
+  /* Show the easiest logical step anywhere on the board as a hint, and select
+     the hinted cell so its row/column/box light up — a bare hint on a blank
+     cell would otherwise be invisible. */
+  function nextMove() {
+    if (paused || !game) return;
+    const cands = Techniques.deriveCandidates(game.puzzle, game.entries);
+    const h = Techniques.findHint(cands);
+    if (h) {
+      const focus = (h.keyCells && h.keyCells[0] != null) ? h.keyCells[0] : h.cells[0];
+      if (focus != null && focus >= 0) {
+        selected = focus;
+        recomputeConflicts();
+      }
+      applyHintState([h]);
     } else {
-      hintMessage.textContent = '';
+      applyHintState([]);
+      const p = document.createElement('p');
+      p.className = 'hint-more';
+      p.textContent = 'No logical next step found \u2014 the board may be complete or need a guess.';
+      hintPanel.appendChild(p);
     }
+    render();
   }
 
   function toggleHints() {
@@ -385,6 +469,7 @@ const Game = (function () {
     hintToggle.classList.toggle('on', hintsOn);
     hintToggle.setAttribute('aria-pressed', String(hintsOn));
     hintToggle.textContent = hintsOn ? 'Hints: On' : 'Hints: Off';
+    nextMoveBtn.classList.toggle('hidden', !hintsOn);
     updateHints();
     render();
   }
@@ -619,6 +704,7 @@ const Game = (function () {
     candidateModeBtn.addEventListener('click', () => { inputMode = 'candidate'; setModeUI(); });
     hintToggle.addEventListener('click', toggleHints);
     indexToggle.addEventListener('click', toggleIndexes);
+    nextMoveBtn.addEventListener('click', nextMove);
     document.getElementById('win-play-again').addEventListener('click', () => {
       winModal.classList.add('hidden');
       startNew(currentDifficulty());

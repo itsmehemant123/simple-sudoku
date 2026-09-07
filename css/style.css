@@ -595,12 +595,23 @@ button.primary:hover {
 .cell.error { background: var(--error-bg); }
 
 /* Hint overlay: pattern cells get a teal tint + ring, elimination cells a
-   faint rose tint. `:not(.selected)` keeps the selection colour on top.
+   faint rose tint, key cells (the single / pivot / fin / target to act on) a
+   stronger ring. `:not(.selected)` keeps the selection colour on top.
    NB: named `.hint-cell` — the plain `.hint` class is the muted paragraph
    helper and its `margin` must never apply to board cells. */
 .cell.hint-cell { box-shadow: inset 0 0 0 2px var(--hint-ring); }
 .cell.hint-cell:not(.selected):not(.hint-elim) { background: var(--hint); }
 .cell.hint-elim:not(.selected) { background: var(--hint-elim); }
+.cell.hint-key { box-shadow: inset 0 0 0 3px var(--hint-ring); }
+
+/* The specific digit a hint removes is dimmed + struck in the elimination
+   cell's candidate grid. */
+.cand-grid span.elim-digit,
+.cand-grid .single.elim-digit {
+  opacity: 0.35;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}
 
 .cell .value {
   font-size: clamp(16px, 4.5vw, 26px);
@@ -683,9 +694,76 @@ button.primary:hover {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 4px 14px var(--accent-glow);
 }
 
-/* Always reserves a line so showing/clearing a hint never shifts the pinned
-   compact board up or down. */
-#hint-message { color: var(--link); font-weight: 500; min-height: 1.5em; }
+.next-move {
+  align-self: center;
+  padding: 6px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 999px;
+  color: var(--link);
+  background: var(--surface-2);
+  box-shadow: inset 0 1px 0 var(--shine);
+}
+
+/* Hint explanation panel. Reserves vertical space so showing/clearing hints
+   never shifts the pinned compact board up or down. */
+.hint-panel {
+  width: 100%;
+  min-height: 4.2em;
+  max-height: 10.5em;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--muted) transparent;
+}
+
+.hint-panel > .hint-more { margin: 8px 0 0; }
+
+.hint-item {
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.hint-item:first-child { margin-top: 0; }
+
+.hint-title {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--link);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  text-align: left;
+}
+
+.hint-title:hover {
+  background: var(--surface-2);
+  border-color: transparent;
+  color: var(--link);
+}
+
+.hint-chev {
+  font-size: 0.8rem;
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+
+.hint-item.open .hint-chev { transform: rotate(180deg); }
+
+.hint-body { padding: 0 12px 10px; }
+.hint-body p { margin: 6px 0 0; font-size: 0.8rem; line-height: 1.5; color: var(--text); }
+.hint-body p:first-child { margin-top: 0; }
+.hint-more { font-size: 0.78rem; color: var(--muted); }
 
 .number-pad {
   display: grid;
@@ -894,8 +972,9 @@ html.compact #game-view .board.show-indexes .row-labels span {
   font-size: clamp(8px, calc(var(--vvw) * 0.022), 11px);
 }
 
-/* Reserve two lines so wrapped hint text never shifts the one-screen board. */
-html.compact #game-view #hint-message { min-height: 2.6em; }
+/* Reserve space for the hint panel so wrapped explanations never shift the
+   one-screen board. */
+html.compact #game-view .hint-panel { min-height: 5.2em; }
 
 /* Landscape: board on the left, controls on the right, using screen height. */
 html.compact.compact-landscape #game-view .game-body {
