@@ -38,6 +38,7 @@ const Game = (function () {
   const keyShortEl = document.getElementById('game-key-short');
   const modeHint = document.getElementById('mode-hint');
   const hintToggle = document.getElementById('hint-toggle');
+  const indexToggle = document.getElementById('index-toggle');
   const hintMessage = document.getElementById('hint-message');
   const padBtns = [];
 
@@ -126,6 +127,7 @@ const Game = (function () {
     difficultyLabel.textContent = Storage.cap(game.difficulty);
     keyShortEl.textContent = '#' + game.key.slice(0, 6).toUpperCase();
     setCheckButtonState();
+    setIndexButton();
     applyTimerVisibility();
     updateHints();
     render();
@@ -252,7 +254,33 @@ const Game = (function () {
       cell.addEventListener('click', () => selectCell(i));
       boardEl.appendChild(cell);
     }
+    const showIdx = Storage.settings().showIndexes;
+    boardEl.classList.toggle('show-indexes', showIdx);
+    if (showIdx) boardEl.appendChild(buildIndexLabels());
     updatePadState();
+  }
+
+  /* Row/column index gutters drawn when the Indexes toggle is on. Decorative
+     only: pointer-events are disabled in CSS so cell taps keep working. */
+  function buildIndexLabels() {
+    const labels = document.createElement('div');
+    labels.className = 'board-labels';
+    labels.setAttribute('aria-hidden', 'true');
+    const cols = document.createElement('div');
+    cols.className = 'col-labels';
+    const rows = document.createElement('div');
+    rows.className = 'row-labels';
+    for (let n = 1; n <= 9; n++) {
+      const c = document.createElement('span');
+      c.textContent = n;
+      cols.appendChild(c);
+      const r = document.createElement('span');
+      r.textContent = n;
+      rows.appendChild(r);
+    }
+    labels.appendChild(cols);
+    labels.appendChild(rows);
+    return labels;
   }
 
   /* Keep the number pad in sync with the board:
@@ -358,6 +386,22 @@ const Game = (function () {
     hintToggle.setAttribute('aria-pressed', String(hintsOn));
     hintToggle.textContent = hintsOn ? 'Hints: On' : 'Hints: Off';
     updateHints();
+    render();
+  }
+
+  /* Row/column index toggle (persisted setting, drawn in render()). */
+  function setIndexButton() {
+    const on = Storage.settings().showIndexes;
+    indexToggle.classList.toggle('on', on);
+    indexToggle.setAttribute('aria-pressed', String(on));
+    indexToggle.textContent = on ? 'Indexes: On' : 'Indexes: Off';
+  }
+
+  function toggleIndexes() {
+    const s = Storage.settings();
+    s.showIndexes = !s.showIndexes;
+    Storage.saveSettings(s);
+    setIndexButton();
     render();
   }
 
@@ -574,6 +618,7 @@ const Game = (function () {
     valueModeBtn.addEventListener('click', () => { inputMode = 'value'; setModeUI(); });
     candidateModeBtn.addEventListener('click', () => { inputMode = 'candidate'; setModeUI(); });
     hintToggle.addEventListener('click', toggleHints);
+    indexToggle.addEventListener('click', toggleIndexes);
     document.getElementById('win-play-again').addEventListener('click', () => {
       winModal.classList.add('hidden');
       startNew(currentDifficulty());

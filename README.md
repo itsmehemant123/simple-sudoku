@@ -11,6 +11,7 @@ A sleek, client-side Sudoku web app — no build step, no dependencies, works fu
 - **Cell awareness** — selecting a cell highlights its row, column, and 3×3 box
 - **Conflict highlighting** (toggleable) — selecting a number flags peer cells whose candidates clash; scans handle any number of candidates per cell
 - **In-game hints** — a *Hints* toggle in the game view; tapping a cell then highlights any detected technique involving it (Hidden/Naked Single, Locked Candidates, pairs/triples, X-Wing, Swordfish, Finned X-Wing, XY/XYZ-Wing, W-Wing, Skyscraper, Two-String Kite, Unique Rectangle) and explains the elimination in a line under the board. Detection is read-only and uses derived candidates, never your notes; highlights appear only on cells that already hold a value or your own candidates
+- **Row/column indexes** — an *Indexes* toggle in the game view draws 1–9 column labels along the top and 1–9 row labels down the left of the board, making it easy for new players to name a cell's row and column
 - **Error checking** — off by default; when enabled, duplicates are flagged red on entry. A **Check Board** button (active only when auto-check is off) scans the whole grid
 - **Completed-digit lock** — once a digit has all 9 placements, its pad button is disabled
 - **Timer + Pause/Resume** (timer display can be hidden from Settings), plus **Give Up** (with confirm) that records an abandoned game, and **Clear Board** (with confirm) that wipes all your entries and notes while keeping the givens and the running clock

@@ -139,7 +139,7 @@ body {
 
 /* Zoom level: scales in-flow content + modal boxes so the whole UI
    grows together without affecting fixed-position backdrops. */
-html { --zoom: 1; }
+html { --zoom: 1; --idx-strip: clamp(20px, 5.5vw, 26px); }
 .view,
 .modal-box { zoom: var(--zoom); }
 
@@ -515,6 +515,53 @@ button.primary:hover {
   box-shadow: var(--shadow-lg), inset 0 1px 0 var(--shine);
 }
 
+/* Row/column index gutters: the board gains a top/left strip (kept square by
+   the symmetric padding) and labels are drawn in it while `show-indexes` is
+   on. Decorative only — pointer-events disabled so cell taps are unaffected. */
+.board.show-indexes {
+  position: relative;
+  padding: var(--idx-strip) 0 0 var(--idx-strip);
+}
+
+.board.show-indexes .board-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.board.show-indexes .col-labels,
+.board.show-indexes .row-labels {
+  position: absolute;
+  display: flex;
+}
+
+.board.show-indexes .col-labels {
+  top: 0;
+  left: var(--idx-strip);
+  right: 0;
+  height: var(--idx-strip);
+}
+
+.board.show-indexes .row-labels {
+  top: var(--idx-strip);
+  left: 0;
+  bottom: 0;
+  width: var(--idx-strip);
+  flex-direction: column;
+}
+
+.board.show-indexes .col-labels span,
+.board.show-indexes .row-labels span {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(9px, 1.8vw, 12px);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--muted);
+}
+
 .cell {
   position: relative;
   aspect-ratio: 1;
@@ -617,8 +664,9 @@ button.primary:hover {
   color: var(--accent-text);
 }
 
+.view-toggles { display: flex; gap: 8px; justify-content: center; }
+
 .hint-toggle {
-  align-self: center;
   padding: 6px 16px;
   font-size: 0.85rem;
   font-weight: 600;
@@ -835,6 +883,15 @@ html.compact #game-view .cand-grid {
 }
 html.compact #game-view .cand-grid .single {
   font-size: clamp(10px, calc(var(--vvw) * 0.028), 14px);
+}
+
+/* Index gutters scale off the visual width too. */
+html.compact #game-view .board.show-indexes {
+  --idx-strip: clamp(16px, calc(var(--vvw) * 0.045), 24px);
+}
+html.compact #game-view .board.show-indexes .col-labels span,
+html.compact #game-view .board.show-indexes .row-labels span {
+  font-size: clamp(8px, calc(var(--vvw) * 0.022), 11px);
 }
 
 /* Reserve two lines so wrapped hint text never shifts the one-screen board. */
